@@ -2,6 +2,8 @@ from shiny import App, reactive, render, ui, run_app
 from shinywidgets import render_widget, output_widget
 import pandas as pd
 import geopandas as gpd
+import matplotlib.cm as cm
+import matplotlib.colors as clr
 import matplotlib.pyplot as plt
 
 # set pandas options
@@ -83,7 +85,7 @@ def server(input, output, session):
         race_results['VotePct'] = race_results.groupby(['Precinct'])['Votes'].transform(lambda x: x / x.sum())
 
         # Sort the results by precinct and candidate name
-        race_results.sort_values(by=['Precinct', 'Name'], inplace=True)
+        race_results.sort_values(by=['Precinct', 'Party', 'Name'], inplace=True)
 
         return race_results
 
@@ -106,6 +108,9 @@ def server(input, output, session):
         # Determine the winner of each precinct
         candidate_results['Winner'] = candidate_results.iloc[:, 2:].idxmax(axis=1)
 
+        # if is_partisan(results):
+        #     candidate_results['WinnerParty'] = results
+
         print(candidate_results.to_string())
 
         # Merge the results with the precinct shapefile data
@@ -114,8 +119,9 @@ def server(input, output, session):
         fig, ax = plt.subplots()
         ax.set_title('Precincts Results (by Candidate)')
         ax.set_axis_off()
+
         precinct_data.plot(column='Winner',
-                           cmap='viridis',
+                           cmap=cm.get_cmap('bwr').reversed() if is_partisan(results) else 'tab20',
                            edgecolor='black',
                            linewidth=0.3,
                            ax=ax,
@@ -147,17 +153,27 @@ def server(input, output, session):
         # Merge the results with the precinct shapefile data
         precinct_data = precincts.merge(party_results, left_on='Precinct_N', right_on='PrecinctCode')
 
+        rep_min = party_results['RepMarginPct'].min()
+        rep_max = party_results['RepMarginPct'].max()
+        print(rep_min, rep_max)
+        rep_divnorm = clr.TwoSlopeNorm(vmin=rep_min, vcenter=0.0, vmax=rep_max)
+
+        dem_min = party_results['RepMarginPct'].min()
+        dem_max = party_results['RepMarginPct'].max()
+        dem_divnorm = clr.TwoSlopeNorm(vmin=dem_min, vcenter=0.0, vmax=dem_max)
+
         # Plot the choropleth map
         fig, ax = plt.subplots()
         ax.set_title('Precincts Results (by Party)')
         ax.set_axis_off()
-        precinct_data.plot(column='DemMarginPct',
-                           cmap='RdBu',
+        precinct_data.plot(column='RepMarginPct',
+                           cmap='bwr',
                            edgecolor='black',
                            linewidth=0.2,
                            ax=ax,
                            legend=True,
-                           alpha=1.0)
+                           alpha=1.0,
+                           norm=rep_divnorm)
         return fig
 
     @render.data_frame
