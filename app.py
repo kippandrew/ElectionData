@@ -9,7 +9,7 @@ pd.options.display.width = 120
 pd.options.mode.copy_on_write = True
 
 # define election years (not all supported)
-election_years = [2012, 2016, 2020, 2024]
+election_years = [2024]
 
 # load precincts shapes from ESRI shapefile
 precincts = gpd.read_file("data/Clatsop_Precincts.shp")
