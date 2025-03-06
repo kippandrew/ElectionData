@@ -10,7 +10,9 @@ def extract_tables_from_pdf(path):
     tables = []
     with pdfplumber.open(path) as pdf:
         for page in pdf.pages:
-            tables.extend(page.extract_tables())
+            tables.extend(page.extract_tables(dict(text_line_dir_rotated="rtl",
+                                                   text_char_dir_rotated="ttb",
+                                                   text_keep_blank_chars=True)))
     return tables
 
 
@@ -38,7 +40,6 @@ def parse_race(race: str):
 
 
 def parse_candidate(candidate: str):
-
     # remove newlines from the candidate name
     candidate = candidate.replace('\n', ' ')
 
@@ -70,11 +71,10 @@ def extract_tallies(tbl, race, index1, index2):
 
     for row in tbl[offset:]:
         for i, col in enumerate(row[index1:index2]):
-
             precinct = parse_precinct(row[0])
             tally = parse_tally(col) if col != '' else None
 
-            yield dict(Race=parse_race(race),  **precinct, **candidates[i], Votes=tally)
+            yield dict(Race=parse_race(race), **precinct, **candidates[i], Votes=tally)
 
 
 def extract_results(tbl):
@@ -115,4 +115,4 @@ if __name__ == '__main__':
     # print(df)
     print(df.to_string())
 
-    df.to_csv('data/Clatsop_2024_Precinct.csv', index=False)
+    df.to_csv('data/2024_Clatsop_Precinct.csv', index=False)
