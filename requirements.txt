@@ -1,4 +1,6 @@
 shiny
+shinywidgets
 matplotlib
+plotly
 pandas
 geopandas
