@@ -1,0 +1,32 @@
+<!DOCTYPE qgis PUBLIC 'http://mrcc.com/qgis.dtd' 'SYSTEM'>
+<qgis version="3.42.0-Münster">
+  <identifier>https://delta.co.clatsop.or.us/server/rest/services/Political_boundaries/MapServer/1</identifier>
+  <parentidentifier></parentidentifier>
+  <language></language>
+  <type>dataset</type>
+  <title>Precincts</title>
+  <abstract></abstract>
+  <links>
+    <link description="" format="" mimeType="" type="WWW:LINK" size="" url="https://delta.co.clatsop.or.us/server/rest/services/Political_boundaries/MapServer/1" name="Source"/>
+  </links>
+  <dates/>
+  <fees></fees>
+  <rights>County of Clatsop, Oregon GIS Services</rights>
+  <encoding></encoding>
+  <crs>
+    <spatialrefsys nativeFormat="Wkt">
+      <wkt></wkt>
+      <proj4>+proj=merc +a=6378137 +b=6378137 +lat_ts=0 +lon_0=0 +x_0=0 +y_0=0 +k=1 +units=m +nadgrids=@null +wktext +no_defs</proj4>
+      <srsid>3857</srsid>
+      <srid>3857</srid>
+      <authid>EPSG:3857</authid>
+      <description>WGS 84 / Pseudo-Mercator</description>
+      <projectionacronym>merc</projectionacronym>
+      <ellipsoidacronym>EPSG:7030</ellipsoidacronym>
+      <geographicflag>false</geographicflag>
+    </spatialrefsys>
+  </crs>
+  <extent>
+    <spatial crs="EPSG:3857" maxz="nan" dimensions="2" minx="-13806539.83247055672109127" miny="5742189.33516606502234936" minz="nan" maxy="5825170.60250478517264128" maxx="-13730684.39486614242196083"/>
+  </extent>
+</qgis>
