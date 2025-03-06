@@ -30,24 +30,18 @@ app_ui = ui.page_fillable(
                 ui.input_select("select_race",
                                 "Select Election",
                                 choices=[]),  # will be populated by the server function
-                ui.input_radio_buttons(
-                    "select_plot",
-                    "Plot Type",
-                    {
-                        "candidate": "Candidate Results",
-                        "party": "Party Results",
-                        "turnout": "Turnout Results"
-                    },
-                ),
                 width=350
             ),
-            ui.card(
-                ui.card_header("Election Results"),
-                ui.output_plot("results_plot"),
-            ),
-            ui.card(
-                ui.card_header("Election Results Details"),
-                ui.output_data_frame("results_table")
+            ui.navset_card_underline(
+                ui.nav_menu("Map ",
+                            ui.nav_panel("Election Results",
+                                         ui.output_plot("results_plot_candidate", height="400px")),
+                            ui.nav_panel("Election Results (Party)",
+                                         ui.output_plot("results_plot_party", height="400px")),
+                            ),
+                ui.nav_panel("Table",
+                             ui.output_data_frame("results_table")),
+                title="Election Results"
             )
         )
     )
@@ -82,14 +76,13 @@ def server(input, output, session):
                                                    'Name'])['Votes'].sum().reset_index()
 
             race_results = pd.concat([major_parties, minor_parties])
-
         else:
-
             race_results = election_results.copy()
 
         # Calculate the percentage of votes for each candidate in each precinct
         race_results['VotePct'] = race_results.groupby(['Precinct'])['Votes'].transform(lambda x: x / x.sum())
 
+        # Sort the results by precinct and candidate name
         race_results.sort_values(by=['Precinct', 'Name'], inplace=True)
 
         return race_results
@@ -100,9 +93,40 @@ def server(input, output, session):
         choices = list(df['Race'].unique())
         return ui.update_select("select_race", choices=choices, selected=choices[0])
 
-    def _plot_party(results):
-        if not is_partisan(results):
-            raise ValueError("The selected election is non-partisan. Please choose a different election.")
+    @render.plot()
+    def results_plot_candidate():
+        results = calculate_results()
+
+        # Pivot the data by candidate to have separate columns for each candidate
+        candidate_results = results.pivot_table(index=['Precinct', 'PrecinctCode'],
+                                                columns='Name',
+                                                values='VotePct').reset_index()
+
+
+        # Determine the winner of each precinct
+        candidate_results['Winner'] = candidate_results.iloc[:, 2:].idxmax(axis=1)
+
+        print(candidate_results.to_string())
+
+        # Merge the results with the precinct shapefile data
+        precinct_data = precincts.merge(candidate_results, left_on='Precinct_N', right_on='PrecinctCode')
+
+        fig, ax = plt.subplots()
+        ax.set_title('Precincts Results (by Candidate)')
+        ax.set_axis_off()
+        precinct_data.plot(column='Winner',
+                           cmap='viridis',
+                           edgecolor='black',
+                           linewidth=0.3,
+                           ax=ax,
+                           legend=True,
+                           alpha=1.0)
+        return fig
+
+
+    @render.plot()
+    def results_plot_party():
+        results = calculate_results()
 
         # Pivot the data by party to have separate columns for Democratic, Republican and Other Party votes
         party_results = results.pivot_table(index=['Precinct', 'PrecinctCode'],
@@ -124,23 +148,17 @@ def server(input, output, session):
         precinct_data = precincts.merge(party_results, left_on='Precinct_N', right_on='PrecinctCode')
 
         # Plot the choropleth map
-        fig, ax = plt.subplots(1, 1, figsize=(10, 10))
+        fig, ax = plt.subplots()
         ax.set_title('Precincts Results (by Party)')
         ax.set_axis_off()
         precinct_data.plot(column='DemMarginPct',
-                                  cmap='RdBu',
-                                  edgecolor='black',
-                                  linewidth=0.2,
-                                  ax=ax,
-                                  legend=True,
-                                  alpha=1.0)
+                           cmap='RdBu',
+                           edgecolor='black',
+                           linewidth=0.2,
+                           ax=ax,
+                           legend=True,
+                           alpha=1.0)
         return fig
-
-    @render.plot
-    def results_plot():
-        results = calculate_results()
-        if input.select_plot() == 'party':
-            return _plot_party(results)
 
     @render.data_frame
     def results_table():
